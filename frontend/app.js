@@ -16,11 +16,18 @@ function getItemCategory(title) {
   return 'food';
 }
 
-// Title normalizer to group cross-store duplicates
+// Improved title normalizer for cross-store grouping
 function getNormalizedKey(title) {
   return title
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, '')
+    // Remove multi-pack/quantity patterns (e.g. 12pk, 80gx12, 12 x 80g)
+    .replace(/\b(\d+)\s*(pk|pack|x)\b/gi, '')
+    .replace(/\bx\s*(\d+)\b/gi, '')
+    // Remove weight/volume specifications (e.g. 80g, 3kg, 500g, 15l)
+    .replace(/\b\d+(\.\d+)?\s*(g|kg|l|ml)\b/gi, '')
+    // Remove special characters and clean extra spacing
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -129,7 +136,7 @@ function renderResults() {
     });
 
     const groupedArray = Object.values(groups);
-    resultMeta.textContent = `${groupedArray.length} product(s) found across stores`;
+    resultMeta.textContent = `${groupedArray.length} product group(s) found across stores`;
 
     groupedArray.forEach(items => {
       items.sort((a, b) => (a.price || Infinity) - (b.price || Infinity));
