@@ -65,7 +65,7 @@ const resultMeta = document.getElementById("result-meta");
 const emptyState = document.getElementById("empty-state");
 
 function matches(product, term) {
-  if (!term) return false;
+  if (!term) return true; // Empty search term matches all products
   const haystack = `${product.title} ${product.brand || ""}`.toLowerCase();
   return term
     .toLowerCase()
@@ -96,13 +96,7 @@ function renderResults() {
   const term = searchInput.value.trim();
   resultsList.innerHTML = "";
 
-  if (!term) {
-    resultMeta.textContent = "";
-    emptyState.hidden = true;
-    return;
-  }
-
-  // Filter by search query AND active category filter
+  // Filter products by search term AND active category button
   const filtered = allProducts.filter((p) => {
     const matchesTerm = matches(p, term);
     const category = getItemCategory(p.title);
