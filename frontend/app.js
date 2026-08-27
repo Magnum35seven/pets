@@ -16,6 +16,14 @@ function getItemCategory(title) {
   return 'food';
 }
 
+// Title normalizer to group cross-store duplicates
+function getNormalizedKey(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+}
+
 // ---- Tab switching --------------------------------------------------
 document.querySelectorAll(".tab-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -53,19 +61,20 @@ async function loadData() {
     const json = await res.json();
     renderMovers(json.changes || []);
   } catch (err) {
-    // no price_changes.json yet (first ever run) — that's fine
+    // no price_changes.json yet
   }
 }
 
 // ---- Search / render --------------------------------------------------
 const searchInput = document.getElementById("search-input");
 const sortSelect = document.getElementById("sort-select");
+const groupToggle = document.getElementById("group-toggle");
 const resultsList = document.getElementById("results-list");
 const resultMeta = document.getElementById("result-meta");
 const emptyState = document.getElementById("empty-state");
 
 function matches(product, term) {
-  if (!term) return true; // Empty search term matches all products
+  if (!term) return true;
   const haystack = `${product.title} ${product.brand || ""}`.toLowerCase();
   return term
     .toLowerCase()
@@ -84,7 +93,6 @@ function sortProducts(products, mode) {
     const pct = (p) => (p.compare_at_price ? (p.compare_at_price - p.price) / p.compare_at_price : 0);
     return [...products].sort((a, b) => pct(b) - pct(a));
   }
-  // default: unit price
   return [...products].sort((a, b) => withValue(a, "unit_price") - withValue(b, "unit_price"));
 }
 
@@ -96,7 +104,6 @@ function renderResults() {
   const term = searchInput.value.trim();
   resultsList.innerHTML = "";
 
-  // Filter products by search term AND active category button
   const filtered = allProducts.filter((p) => {
     const matchesTerm = matches(p, term);
     const category = getItemCategory(p.title);
@@ -104,15 +111,58 @@ function renderResults() {
     return matchesTerm && matchesCategory;
   });
 
-  const matched = sortProducts(filtered, sortSelect.value);
-
-  if (matched.length === 0) {
+  if (filtered.length === 0) {
     resultMeta.textContent = "";
     emptyState.hidden = false;
     return;
   }
 
   emptyState.hidden = true;
+
+  // Render grouped view if toggle is checked
+  if (groupToggle && groupToggle.checked) {
+    const groups = {};
+    filtered.forEach(p => {
+      const key = getNormalizedKey(p.title);
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(p);
+    });
+
+    const groupedArray = Object.values(groups);
+    resultMeta.textContent = `${groupedArray.length} product(s) found across stores`;
+
+    groupedArray.forEach(items => {
+      items.sort((a, b) => (a.price || Infinity) - (b.price || Infinity));
+      const mainItem = items[0];
+
+      const card = document.createElement("div");
+      card.className = "product-card";
+
+      let storeListHtml = items.map((item, idx) => {
+        const isCheapest = idx === 0 && items.length > 1;
+        const cheapestBadge = isCheapest ? ' <span style="color:#00e676; font-weight:bold; font-size:12px;">★ CHEAPEST</span>' : '';
+        return `
+          <div style="display:flex; justify-content:space-between; margin-top:6px; padding-top:6px; border-top:1px solid #333;">
+            <span><a href="${item.url}" target="_blank" rel="noopener">${item.store || item.store_id || "Store"}</a>${cheapestBadge}</span>
+            <span><strong>${formatMoney(item.price)}</strong> ${item.unit_price ? `($${item.unit_price.toFixed(2)}/${item.unit_unit || "kg"})` : ""}</span>
+          </div>
+        `;
+      }).join("");
+
+      card.innerHTML = `
+        <div class="product-info" style="width:100%;">
+          <div class="product-title" style="font-weight:bold;">${mainItem.title}</div>
+          <div class="product-store">${mainItem.brand ? "Brand: " + mainItem.brand + " · " : ""}${items.length} store offer(s)</div>
+          ${storeListHtml}
+        </div>
+      `;
+      resultsList.appendChild(card);
+    });
+    return;
+  }
+
+  // Regular itemized list view
+  const matched = sortProducts(filtered, sortSelect.value);
   const storesCount = new Set(matched.map((p) => p.store_id || p.store)).size;
   resultMeta.textContent = `${matched.length} result(s) across ${storesCount} store(s)`;
 
@@ -150,6 +200,7 @@ document.querySelectorAll(".cat-btn").forEach((btn) => {
 
 searchInput.addEventListener("input", renderResults);
 sortSelect.addEventListener("change", renderResults);
+if (groupToggle) groupToggle.addEventListener("change", renderResults);
 
 // ---- Price Movers ---------------------------------------------------
 function renderMovers(changes) {
