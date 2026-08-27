@@ -1,7 +1,20 @@
-const DATA_URL = "data/latest.json";
-const CHANGES_URL = "data/price_changes.json";
+// ---- Configuration & Data Source ------------------------------------
+const DATA_URL = "latest.json";
+const CHANGES_URL = "price_changes.json";
 
 let allProducts = [];
+let currentCategory = "all";
+
+// Category Tagging Keywords
+const TREAT_KEYWORDS = ['treat', 'bone', 'hoof', 'hooves', 'tendon', 'jerky', 'chew', 'stick', 'trotter', 'ear', 'churu', 'mousse', 'bites'];
+const ACCESSORY_KEYWORDS = ['toy', 'pouch', 'dispenser', 'mat', 'ball', 'cuttlebone', 'cleaner', 'treatment'];
+
+function getItemCategory(title) {
+  const lowerTitle = title.toLowerCase();
+  if (ACCESSORY_KEYWORDS.some(kw => lowerTitle.includes(kw))) return 'accessory';
+  if (TREAT_KEYWORDS.some(kw => lowerTitle.includes(kw))) return 'treat';
+  return 'food';
+}
 
 // ---- Tab switching --------------------------------------------------
 document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -23,9 +36,13 @@ async function loadData() {
   try {
     const res = await fetch(DATA_URL, { cache: "no-store" });
     const json = await res.json();
-    allProducts = json.products || [];
+    allProducts = json.products || json || [];
+    
+    const productCount = Array.isArray(json) ? json.length : (json.product_count || allProducts.length);
+    const scrapedAt = json.scraped_at ? new Date(json.scraped_at).toLocaleString("en-AU") : "Recently";
+
     document.getElementById("last-updated").textContent =
-      `Prices last scraped: ${new Date(json.scraped_at).toLocaleString("en-AU")} · ${json.product_count} products tracked`;
+      `Prices last scraped: ${scrapedAt} · ${productCount} products tracked`;
   } catch (err) {
     document.getElementById("last-updated").textContent =
       "Couldn't load price data yet — run the scraper to generate data/latest.json";
@@ -59,6 +76,7 @@ function matches(product, term) {
 
 function sortProducts(products, mode) {
   const withValue = (p, field) => (p[field] === null || p[field] === undefined ? Infinity : p[field]);
+
   if (mode === "price") {
     return [...products].sort((a, b) => withValue(a, "price") - withValue(b, "price"));
   }
@@ -84,65 +102,84 @@ function renderResults() {
     return;
   }
 
-  const matched = sortProducts(allProducts.filter((p) => matches(p, term)), sortSelect.value);
-  resultMeta.textContent = matched.length
-    ? `${matched.length} result(s) across ${new Set(matched.map((p) => p.store)).size} store(s)`
-    : "";
-  emptyState.hidden = matched.length > 0;
+  // Filter by search query AND active category filter
+  const filtered = allProducts.filter((p) => {
+    const matchesTerm = matches(p, term);
+    const category = getItemCategory(p.title);
+    const matchesCategory = (currentCategory === "all") || (category === currentCategory);
+    return matchesTerm && matchesCategory;
+  });
 
-  const cheapestUnitPrice = matched.reduce((min, p) => {
-    if (p.unit_price === null || p.unit_price === undefined) return min;
-    return min === null ? p.unit_price : Math.min(min, p.unit_price);
-  }, null);
+  const matched = sortProducts(filtered, sortSelect.value);
+
+  if (matched.length === 0) {
+    resultMeta.textContent = "";
+    emptyState.hidden = false;
+    return;
+  }
+
+  emptyState.hidden = true;
+  const storesCount = new Set(matched.map((p) => p.store_id || p.store)).size;
+  resultMeta.textContent = `${matched.length} result(s) across ${storesCount} store(s)`;
 
   matched.forEach((p) => {
-    const li = document.createElement("li");
-    li.className = "docket-item";
-    if (cheapestUnitPrice !== null && p.unit_price === cheapestUnitPrice) {
-      li.classList.add("is-cheapest");
-    }
+    const card = document.createElement("div");
+    card.className = "product-card";
 
-    const unitLabel = p.unit_price_basis ? `/${p.unit_price_basis}` : "";
+    const unitStr = p.unit_price ? `$${p.unit_price.toFixed(2)}/${p.unit_unit || "kg"}` : "No unit price";
+    const outOfStockTag = p.in_stock === false ? ' · <span class="badge out-of-stock">OUT OF STOCK</span>' : "";
+    const wasPrice = p.compare_at_price ? ` <span class="was-price">was $${p.compare_at_price.toFixed(2)}</span>` : "";
 
-    li.innerHTML = `
-      <a class="docket-title" href="${p.url}" target="_blank" rel="noopener">${p.title}</a>
-      <div class="docket-store">${p.store_name}${p.brand ? " · " + p.brand : ""}${p.in_stock === false ? " · OUT OF STOCK" : ""}</div>
-      <div class="docket-price">${formatMoney(p.price)}${p.compare_at_price ? `<span class="was">was ${formatMoney(p.compare_at_price)}</span>` : ""}</div>
-      <div class="docket-unitprice">${p.unit_price ? formatMoney(p.unit_price) + unitLabel : ""}</div>
+    card.innerHTML = `
+      <div class="product-info">
+        <a class="product-title" href="${p.url}" target="_blank" rel="noopener">${p.title}</a>
+        <div class="product-store">${p.store || p.store_id || ""} ${p.brand ? "· " + p.brand : ""}${outOfStockTag}</div>
+      </div>
+      <div class="product-price">
+        <div class="price-main">${formatMoney(p.price)}${wasPrice}</div>
+        <div class="price-unit">${unitStr}</div>
+      </div>
     `;
-    resultsList.appendChild(li);
+    resultsList.appendChild(card);
   });
 }
+
+// Category button listeners
+document.querySelectorAll(".cat-btn").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    document.querySelectorAll(".cat-btn").forEach((b) => b.classList.remove("active"));
+    e.target.classList.add("active");
+    currentCategory = e.target.dataset.category;
+    renderResults();
+  });
+});
 
 searchInput.addEventListener("input", renderResults);
 sortSelect.addEventListener("change", renderResults);
 
-// ---- Price movers tab ---------------------------------------------
+// ---- Price Movers ---------------------------------------------------
 function renderMovers(changes) {
-  const list = document.getElementById("movers-list");
-  const empty = document.getElementById("movers-empty");
-  list.innerHTML = "";
-  empty.hidden = changes.length > 0;
+  const dropsList = document.getElementById("drops-list");
+  const risesList = document.getElementById("rises-list");
 
-  changes.forEach((c) => {
+  const drops = changes.filter((c) => c.delta < 0);
+  const rises = changes.filter((c) => c.delta > 0);
+
+  dropsList.innerHTML = drops.length ? "" : "<li>No price drops detected in the last scrape.</li>";
+  risesList.innerHTML = rises.length ? "" : "<li>No price rises detected in the last scrape.</li>";
+
+  drops.forEach((c) => {
     const li = document.createElement("li");
-    li.className = "docket-item";
-    const badgeClass = c.direction === "drop" ? "drop" : "rise";
-    const arrow = c.direction === "drop" ? "▼" : "▲";
+    li.innerHTML = `<a href="${c.url}" target="_blank">${c.title}</a>: dropped by $${Math.abs(c.delta).toFixed(2)} to $${c.new_price.toFixed(2)}`;
+    dropsList.appendChild(li);
+  });
 
-    li.innerHTML = `
-      <a class="docket-title" href="${c.url}" target="_blank" rel="noopener">${c.title}</a>
-      <div class="docket-store">${c.store_name}</div>
-      <div class="docket-price">${formatMoney(c.new_price)}<span class="was">was ${formatMoney(c.old_price)}</span></div>
-      <div class="docket-unitprice"><span class="pct-badge ${badgeClass}">${arrow} ${Math.abs(c.pct_change)}%</span></div>
-    `;
-    list.appendChild(li);
+  rises.forEach((c) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<a href="${c.url}" target="_blank">${c.title}</a>: rose by $${c.delta.toFixed(2)} to $${c.new_price.toFixed(2)}`;
+    risesList.appendChild(li);
   });
 }
 
-// ---- PWA service worker ---------------------------------------------
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
-}
-
+// Initial load
 loadData();
