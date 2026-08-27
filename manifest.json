@@ -1,0 +1,13 @@
+{
+  "name": "Kibble Compare — Pet Food Price Tracker",
+  "short_name": "Kibble Compare",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#171512",
+  "theme_color": "#171512",
+  "description": "Compare pet food prices across Australian retailers and catch price drops.",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,0 +1,222 @@
+/* Tokens ------------------------------------------------------------ */
+:root {
+  --ink: #1c1a17;
+  --paper: #f6f2e9;
+  --paper-dim: #ece5d4;
+  --charcoal: #171512;
+  --tag-orange: #d65a1f;   /* "special sticker" accent — price drops */
+  --tag-red: #b8302a;      /* price rises / warnings */
+  --tag-green: #4c6b3f;    /* in-stock / good deal */
+  --rule: rgba(28, 26, 23, 0.15);
+
+  --font-display: "Space Grotesk", "Arial Narrow", sans-serif;
+  --font-mono: "IBM Plex Mono", "Courier New", monospace;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: local("Space Grotesk");
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--charcoal);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+/* Header ------------------------------------------------------------ */
+.site-header {
+  background: var(--charcoal);
+  color: var(--paper);
+  padding: 1.1rem 1.25rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand-mark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+.brand-mark-accent { color: var(--tag-orange); }
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.9rem;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: rgba(246, 242, 233, 0.55);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+}
+.tab-btn.is-active {
+  color: var(--paper);
+  border-bottom-color: var(--tag-orange);
+}
+
+/* Layout -------------------------------------------------------------*/
+main {
+  background: var(--paper);
+  min-height: 70vh;
+  padding: 1.1rem 1.1rem 2.5rem;
+}
+
+.tab-panel { display: none; }
+.tab-panel.is-active { display: block; }
+
+.search-bar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+#search-input {
+  flex: 1 1 220px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.7rem 0.8rem;
+  border: 2px solid var(--ink);
+  border-radius: 2px;
+  background: #fff;
+}
+
+#sort-select {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.6rem;
+  border: 2px solid var(--ink);
+  border-radius: 2px;
+  background: #fff;
+}
+
+.result-meta, .section-intro {
+  font-size: 0.82rem;
+  color: rgba(28,26,23,0.6);
+  margin: 0.6rem 0 0.9rem;
+}
+
+/* Docket / receipt list ---------------------------------------------*/
+.docket-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.docket-item {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.85rem 0.95rem;
+  margin-bottom: 0.55rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.2rem 0.9rem;
+  position: relative;
+}
+
+/* perforation notch, receipt-tear detail */
+.docket-item::before {
+  content: "";
+  position: absolute;
+  left: -1px; top: 50%;
+  width: 10px; height: 10px;
+  background: var(--paper);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.docket-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  grid-column: 1 / 2;
+}
+
+.docket-store {
+  font-size: 0.78rem;
+  color: rgba(28,26,23,0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  grid-column: 1 / 2;
+}
+
+.docket-price {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: right;
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+}
+
+.docket-price .was {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  text-decoration: line-through;
+  color: rgba(28,26,23,0.45);
+}
+
+.docket-unitprice {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  text-align: right;
+  grid-column: 2 / 3;
+  color: rgba(28,26,23,0.6);
+}
+
+.docket-item.is-cheapest {
+  border-color: var(--tag-green);
+  border-width: 2px;
+}
+.docket-item.is-cheapest .docket-unitprice::before {
+  content: "★ BEST UNIT PRICE  ";
+  color: var(--tag-green);
+  font-weight: 700;
+}
+
+.pct-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 2px;
+  margin-left: 0.4rem;
+}
+.pct-badge.drop { background: var(--tag-green); color: #fff; }
+.pct-badge.rise { background: var(--tag-red); color: #fff; }
+
+.empty-state {
+  color: rgba(28,26,23,0.55);
+  font-style: italic;
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
+.site-footer {
+  background: var(--charcoal);
+  color: rgba(246,242,233,0.5);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-align: center;
+  padding: 0.7rem;
+}
+
+@media (max-width: 420px) {
+  .docket-title { font-size: 0.88rem; }
+  .docket-price { font-size: 1.05rem; }
+}
