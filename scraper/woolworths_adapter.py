@@ -29,7 +29,7 @@ isn't something to build against sight-unseen.
 
 import requests
 
-from .base import compute_unit_price, now_iso
+from base import compute_unit_price, now_iso
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
