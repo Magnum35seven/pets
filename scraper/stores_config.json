@@ -126,7 +126,7 @@
       "collection_handle": "dog",
       "enabled": false,
       "notes": "Pet food category only. See coles_adapter.py — needs live endpoint capture before enabling."
-    }
+    },
      {
       "id": "petstock",
       "name": "PETstock",
