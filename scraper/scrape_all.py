@@ -1,138 +1,122 @@
-"""
-Runs every enabled store adapter, writes:
-  data/latest.json              - current snapshot, what the PWA reads
-  data/history/YYYY-MM-DD.json  - dated snapshot, for price-history charts
-  data/price_changes.json       - biggest movers vs the previous snapshot
-
-Run this on a schedule (see .github/workflows/scrape.yml) rather than
-per-user-request — the frontend reads the static JSON files it produces,
-it never calls the stores directly.
-"""
-
+#!/usr/bin/env python3
 import json
-import sys
-from datetime import date, datetime, timezone
-from pathlib import Path
+import os
+import time
+from datetime import datetime
 
-ROOT = Path(__file__).resolve().parent.parent
-# Data lives under frontend/data so GitHub Pages (which serves the frontend/
-# folder) can fetch it via a plain relative path — no separate API needed.
-DATA_DIR = ROOT / "frontend" / "data"
-HISTORY_DIR = DATA_DIR / "history"
+# Import store adapters
+import shopify_adapter
+import magento_adapter
+import coles_adapter
+import woolworths_adapter
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import shopify_adapter, magento_adapter, coles_adapter, woolworths_adapter
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "stores_config.json")
+OUTPUT_PATH = os.path.join(os.path.dirname(__file__), "..", "frontend", "latest.json")
+
+ADAPTER_MAP = {
+    "shopify": shopify_adapter,
+    "shopify_unconfirmed": shopify_adapter,
+    "magento": magento_adapter,
+    "magento_unconfirmed": magento_adapter,
+    "coles": coles_adapter,
+    "woolworths": woolworths_adapter,
+}
 
 def load_config():
-    with open(Path(__file__).resolve().parent / "stores_config.json") as f:
-        return json.load(f)["stores"]
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+        return data.get("stores", data)
 
-
-def run_store(store):
-    platform = store["platform"]
-    store_id = store["id"]
-
-    if platform in ("shopify", "shopify_unconfirmed"):
-        return shopify_adapter.fetch_products(
-            domain=store["domain"],
-            store_id=store_id,
-            store_name=store["name"],
-            collection_handle=store.get("collection_handle"),
-        )
-    if platform in ("magento", "magento_unconfirmed"):
-        return magento_adapter.fetch_products(
-            domain=store["domain"],
-            store_id=store_id,
-            store_name=store["name"],
-            search_term=store.get("search_term", "dog food"),
-        )
-    if store_id == "woolworths":
-        return woolworths_adapter.fetch_products()
-    if store_id == "coles":
-        return coles_adapter.fetch_products()
-
-    raise ValueError(f"No adapter wired up for store '{store_id}' (platform={platform})")
-
-
-def compute_price_changes(previous_products, current_products, threshold_pct=10.0):
-    """Flag products whose price moved by more than threshold_pct since the
-    last snapshot — this powers the 'big price drops or rises' feature."""
-    prev_by_key = {(p["store"], p.get("sku") or p.get("url")): p for p in previous_products}
-    changes = []
-
-    for prod in current_products:
-        key = (prod["store"], prod.get("sku") or prod.get("url"))
-        prev = prev_by_key.get(key)
-        if not prev or not prev.get("price") or not prod.get("price"):
-            continue
-        old_price, new_price = prev["price"], prod["price"]
-        if old_price == 0:
-            continue
-        pct_change = round((new_price - old_price) / old_price * 100, 1)
-        if abs(pct_change) >= threshold_pct:
-            changes.append({
-                "store": prod["store"],
-                "store_name": prod["store_name"],
-                "title": prod["title"],
-                "url": prod["url"],
-                "old_price": old_price,
-                "new_price": new_price,
-                "pct_change": pct_change,
-                "direction": "drop" if pct_change < 0 else "rise",
-            })
-
-    changes.sort(key=lambda c: c["pct_change"])
-    return changes
-
+def load_previous_data():
+    """Loads existing product history from the output file if it exists."""
+    if not os.path.exists(OUTPUT_PATH):
+        return {}
+    
+    try:
+        with open(OUTPUT_PATH, "r", encoding="utf-8") as f:
+            items = json.load(f)
+            # Map item ID or URL to its existing price history
+            return {
+                item.get("id", item.get("url")): item.get("price_history", [])
+                for item in items
+                if isinstance(item, dict)
+            }
+    except Exception as e:
+        print(f"Warning: Could not read previous latest.json ({e}). Starting fresh.")
+        return {}
 
 def main():
-    DATA_DIR.mkdir(exist_ok=True)
-    HISTORY_DIR.mkdir(exist_ok=True)
+    stores = load_config()
+    print(f"Loaded {len(stores)} store configurations.")
 
-    config = load_config()
+    previous_histories = load_previous_data()
+    today_str = datetime.now().strftime("%Y-%m-%d")
+
     all_products = []
-    errors = []
 
-    for store in config:
-        if not store.get("enabled"):
+    for store in stores:
+        if not store.get("enabled", True):
+            print(f"Skipping disabled store: {store.get('name', 'Unknown')}")
             continue
-        print(f"Scraping {store['name']} ({store['id']})...")
+
+        platform = store.get("platform", "")
+        adapter = ADAPTER_MAP.get(platform)
+
+        if not adapter:
+            print(f"No adapter found for platform '{platform}' in store '{store.get('name')}'")
+            continue
+
+        print(f"Scraping store: {store.get('name')} ({platform})...")
         try:
-            products = run_store(store)
-            print(f"  -> {len(products)} products")
+            products = adapter.scrape_store(store)
+            print(f"  -> Found {len(products)} products.")
             all_products.extend(products)
         except Exception as e:
-            print(f"  !! FAILED: {e}")
-            errors.append({"store": store["id"], "error": str(e)})
+            print(f"  -> Error scraping {store.get('name')}: {e}")
 
-    # Load previous snapshot (if any) before we overwrite it, for price-diffing
-    previous_products = []
-    latest_path = DATA_DIR / "latest.json"
-    if latest_path.exists():
-        with open(latest_path) as f:
-            previous_products = json.load(f).get("products", [])
+        time.sleep(1)
 
-    snapshot = {
-        "scraped_at": datetime.now(timezone.utc).isoformat(),
-        "product_count": len(all_products),
-        "errors": errors,
-        "products": all_products,
-    }
+    # Process price tracking and keep only the last 3 history snapshots
+    processed_products = []
+    for item in all_products:
+        item_key = item.get("id", item.get("url"))
+        current_price = item.get("price")
 
-    with open(latest_path, "w") as f:
-        json.dump(snapshot, f, indent=2)
+        # Fetch existing history or initialize empty
+        history = previous_histories.get(item_key, [])
 
-    today_path = HISTORY_DIR / f"{date.today().isoformat()}.json"
-    with open(today_path, "w") as f:
-        json.dump(snapshot, f, indent=2)
+        # Avoid appending duplicate records if scraped multiple times on the same date
+        if not history or history[-1].get("date") != today_str:
+            history.append({
+                "date": today_str,
+                "price": current_price
+            })
+        else:
+            history[-1]["price"] = current_price
 
-    changes = compute_price_changes(previous_products, all_products)
-    with open(DATA_DIR / "price_changes.json", "w") as f:
-        json.dump({"computed_at": datetime.now(timezone.utc).isoformat(), "changes": changes}, f, indent=2)
+        # Limit to the 3 most recent historical records
+        history = history[-3:]
+        item["price_history"] = history
 
-    print(f"\nDone. {len(all_products)} products, {len(errors)} store(s) failed, "
-          f"{len(changes)} notable price change(s).")
+        # Calculate price delta relative to the previous run
+        if len(history) >= 2:
+            prev_price = history[-2]["price"]
+            item["previous_price"] = prev_price
+            item["price_change"] = round(current_price - prev_price, 2)
+        else:
+            item["previous_price"] = current_price
+            item["price_change"] = 0.0
 
+        processed_products.append(item)
+
+    print(f"\nTotal products scraped: {len(processed_products)}")
+
+    # Save enriched dataset to frontend target path
+    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+        json.dump(processed_products, f, indent=2, ensure_ascii=False)
+
+    print(f"Successfully saved output to {OUTPUT_PATH}")
 
 if __name__ == "__main__":
     main()
