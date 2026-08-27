@@ -29,7 +29,7 @@
         <button class="cat-btn" data-category="accessory">Accessories &amp; Toys</button>
       </div>
 
-      <!-- Single Search Bar -->
+      <!-- Search & Grouping Controls -->
       <div class="search-bar">
         <input id="search-input" type="search" placeholder='Search e.g. "dry dog food chicken", "kitten wet food"…' />
         <select id="sort-select">
@@ -37,6 +37,9 @@
           <option value="price">Sort: cheapest total price</option>
           <option value="discount">Sort: biggest discount</option>
         </select>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; white-space: nowrap;">
+          <input id="group-toggle" type="checkbox" /> Group identical items
+        </label>
       </div>
 
       <div id="result-meta" class="result-meta"></div>
