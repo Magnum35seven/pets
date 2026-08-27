@@ -15,7 +15,7 @@ feed) and needs its own adapter.
 
 import requests
 
-from .base import compute_unit_price, now_iso, polite_sleep
+from base import compute_unit_price, now_iso, polite_sleep
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
