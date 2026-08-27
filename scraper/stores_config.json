@@ -6,7 +6,7 @@
       "name": "PETstock",
       "platform": "shopify_unconfirmed",
       "domain": "www.petstock.com.au",
-      "collection_handle": "dog-food",
+      "collection_handle": "dog",
       "enabled": true
     },
     {
@@ -14,7 +14,7 @@
       "name": "Budget Pet Products",
       "platform": "shopify_unconfirmed",
       "domain": "www.budgetpetproducts.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": true
     },
     {
@@ -22,7 +22,7 @@
       "name": "VetSupply",
       "platform": "shopify_unconfirmed",
       "domain": "www.vetsupply.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": true
     },
     {
@@ -30,7 +30,7 @@
       "name": "My Pet Warehouse",
       "platform": "shopify_unconfirmed",
       "domain": "www.mypetwarehouse.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": true
     },
     {
@@ -38,7 +38,7 @@
       "name": "RSPCA World for Pets",
       "platform": "shopify_unconfirmed",
       "domain": "www.rspcaworldforpets.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": true
     },
     {
@@ -46,7 +46,7 @@
       "name": "Swaggle",
       "platform": "shopify_unconfirmed",
       "domain": "www.swaggle.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": true,
       "notes": "Runs a Flybuys loyalty tie-in (Flybuys is Coles Group-linked) — worth watching for shared infra/pricing with Coles, though platform itself is unconfirmed."
     },
@@ -55,7 +55,7 @@
       "name": "Petz Park",
       "platform": "shopify_unconfirmed",
       "domain": "www.petzpark.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": true
     },
     {
@@ -63,7 +63,7 @@
       "name": "Pet Chemist",
       "platform": "shopify_unconfirmed",
       "domain": "www.petchemist.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": true,
       "notes": "Smaller/specialty catalogue (animal health focus) — acquired by VetPartners in 2025, platform may have changed since."
     },
@@ -72,7 +72,7 @@
       "name": "The Vet Shed",
       "platform": "shopify_unconfirmed",
       "domain": "www.thevetshed.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": true
     },
     {
@@ -80,7 +80,7 @@
       "name": "PetPost",
       "platform": "shopify_unconfirmed",
       "domain": "www.petpost.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": true
     },
     {
@@ -88,7 +88,7 @@
       "name": "PetO",
       "platform": "shopify_unconfirmed",
       "domain": "www.peto.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": true
     },
     {
@@ -96,7 +96,7 @@
       "name": "Petbarn",
       "platform": "magento_unconfirmed",
       "domain": "www.petbarn.com.au",
-      "search_term": "dog food",
+      "search_term": "dog",
       "enabled": true,
       "notes": "Confirmed running Magento (per a public case study of their app integration). GraphQL endpoint reachability not yet verified live — run the /graphql curl check in README before trusting results."
     },
@@ -105,7 +105,7 @@
       "name": "Pet Circle",
       "platform": "custom",
       "domain": "www.petcircle.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": false,
       "notes": "Runs on commercetools with a custom backend-for-frontend layer (their agency case study calls it 'Kraken D') — not Shopify, not standard Magento GraphQL either. The storefront likely calls its own internal REST/GraphQL API for product search, but the exact schema needs to be captured live from DevTools (Network tab, search a product, find the XHR call). Biggest catalogue of the group — build last, highest payoff, most engineering effort."
     },
@@ -114,7 +114,7 @@
       "name": "Woolworths",
       "platform": "custom",
       "domain": "www.woolworths.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": false,
       "notes": "Pet food category only. See woolworths_adapter.py — needs live endpoint capture before enabling."
     },
@@ -123,7 +123,7 @@
       "name": "Coles",
       "platform": "custom",
       "domain": "www.coles.com.au",
-      "collection_handle": null,
+      "collection_handle": "dog",
       "enabled": false,
       "notes": "Pet food category only. See coles_adapter.py — needs live endpoint capture before enabling."
     }
