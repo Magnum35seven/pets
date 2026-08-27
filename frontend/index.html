@@ -1,71 +1,72 @@
-<!doctype html>
-<html lang="en-AU">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Kibble Compare — pet food price tracker</title>
-<meta name="theme-color" content="#171512" />
-<link rel="manifest" href="manifest.json" />
-<link rel="icon" href="icons/icon-192.png" />
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kibble Compare — Pet Food Price Tracker</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-<header class="site-header">
-  <div class="brand">
-    <span class="brand-mark">KIBBLE<span class="brand-mark-accent">//</span>COMPARE</span>
-  </div>
-  <nav class="tabs" role="tablist">
-    <button class="tab-btn is-active" data-tab="search" role="tab" aria-selected="true">Search</button>
-    <button class="tab-btn" data-tab="movers" role="tab" aria-selected="false">Price movers</button>
-  </nav>
-</header>
-
-<main>
-
-  <section id="tab-search" class="tab-panel is-active">
-    <main>
-      <section id="tab-search" class="tab-panel is-active">
-        
-        <!-- PASTE CATEGORY BUTTONS HERE -->
-        <div class="category-filters" style="margin-bottom: 12px; display: flex; gap: 8px;">
-          <button class="cat-btn active" data-category="all">All</button>
-          <button class="cat-btn" data-category="food">Food</button>
-          <button class="cat-btn" data-category="treat">Treats</button>
-          <button class="cat-btn" data-category="accessory">Accessories & Toys</button>
-        </div>
-
-        <div class="search-bar">
-          <input id="search-input" ...
-    <div class="search-bar">
-      <input id="search-input" type="search" inputmode="search"
-             placeholder="Search e.g. “dry dog food chicken”, “kitten wet food”…"
-             autocomplete="off" />
-      <select id="sort-select">
-        <option value="unit_price">Sort: cheapest per kg/L</option>
-        <option value="price">Sort: cheapest total price</option>
-        <option value="discount">Sort: biggest discount</option>
-      </select>
+  <header>
+    <div class="header-container">
+      <div class="logo">
+        <span class="logo-accent">KIBBLE</span>//COMPARE
+      </div>
+      <nav class="tab-nav" role="tablist">
+        <button class="tab-btn is-active" data-tab="search" role="tab" aria-selected="true">Search</button>
+        <button class="tab-btn" data-tab="movers" role="tab" aria-selected="false">Price movers</button>
+      </nav>
     </div>
+  </header>
 
-    <p id="result-meta" class="result-meta"></p>
+  <main>
+    <section id="tab-search" class="tab-panel is-active">
+      <!-- Category Filter Buttons -->
+      <div class="category-filters" style="margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="cat-btn active" data-category="all">All</button>
+        <button class="cat-btn" data-category="food">Food</button>
+        <button class="cat-btn" data-category="treat">Treats</button>
+        <button class="cat-btn" data-category="accessory">Accessories &amp; Toys</button>
+      </div>
 
-    <ul id="results-list" class="docket-list" aria-live="polite"></ul>
-    <p id="empty-state" class="empty-state" hidden>No matches yet — try a broader term, or check back after the next scrape.</p>
-  </section>
+      <!-- Single Search Bar -->
+      <div class="search-bar">
+        <input id="search-input" type="search" placeholder='Search e.g. "dry dog food chicken", "kitten wet food"…' />
+        <select id="sort-select">
+          <option value="unit_price">Sort: cheapest per kg/L</option>
+          <option value="price">Sort: cheapest total price</option>
+          <option value="discount">Sort: biggest discount</option>
+        </select>
+      </div>
 
-  <section id="tab-movers" class="tab-panel">
-    <p class="section-intro">Products whose price shifted a lot since the last scrape — the "Down Down" checker.</p>
-    <ul id="movers-list" class="docket-list"></ul>
-    <p id="movers-empty" class="empty-state" hidden>No notable price movements recorded yet.</p>
-  </section>
+      <div id="result-meta" class="result-meta"></div>
 
-</main>
+      <div id="results-list" class="results-grid"></div>
 
-<footer class="site-footer">
-  <span id="last-updated">—</span>
-</footer>
+      <div id="empty-state" class="empty-state" hidden>
+        <p>No matching products found.</p>
+      </div>
+    </section>
 
-<script src="app.js"></script>
+    <section id="tab-movers" class="tab-panel">
+      <h2>Price Movers</h2>
+      <div class="movers-container">
+        <div class="movers-column">
+          <h3>Recent Price Drops</h3>
+          <ul id="drops-list" class="movers-list"></ul>
+        </div>
+        <div class="movers-column">
+          <h3>Recent Price Rises</h3>
+          <ul id="rises-list" class="movers-list"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div id="last-updated">Loading tracker status...</div>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
