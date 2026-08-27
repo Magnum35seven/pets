@@ -21,8 +21,7 @@ DATA_DIR = ROOT / "frontend" / "data"
 HISTORY_DIR = DATA_DIR / "history"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from adapters import shopify_adapter, magento_adapter, coles_adapter, woolworths_adapter  # noqa: E402
-
+import shopify_adapter, magento_adapter, coles_adapter, woolworths_adapter
 
 def load_config():
     with open(Path(__file__).resolve().parent / "stores_config.json") as f:
